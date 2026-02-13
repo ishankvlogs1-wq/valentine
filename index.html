@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Ishan's Valentine </title>
+  <!-- canvas-confetti (lightweight) -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Fredoka', 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, cursive, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(145deg, #ffe6f0 0%, #ffd9e8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* floating hearts background (soft, slow) */
+    .hearts-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .heart-float {
+      position: absolute;
+      color: rgba(255, 140, 180, 0.25);
+      font-size: 1.8rem;
+      user-select: none;
+      animation: floatUp 14s linear infinite;
+      bottom: -10%;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(18deg); opacity: 0.1; }
+    }
+
+    /* main container – scenes stack */
+    .scene-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      min-height: 580px;
+      margin: 20px 16px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      min-height: 580px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      background: rgba(255, 245, 248, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 48px 24px 48px 24px;
+      box-shadow: 0 16px 32px rgba(255, 120, 160, 0.12);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(30px) scale(0.98);
+      transition: opacity 0.5s cubic-bezier(0.23, 1, 0.32, 1), transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0.5s;
+      z-index: 5;
+      border: 1px solid rgba(255, 210, 230, 0.6);
+    }
+
+    .scene.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      transition: opacity 0.5s cubic-bezier(0.23, 1, 0.32, 1), transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), visibility 0s linear 0s;
+      z-index: 10;
+    }
+
+    /* all content centered */
+    .content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      gap: 28px;
+    }
+
+    /*  LESS GLOW – softer, more delicate */
+    .glow-text {
+      font-size: 2.4rem;
+      font-weight: 700;
+      text-align: center;
+      color: #b3405c;
+      text-shadow: 0 0 5px #ffd0d8, 0 0 12px #ffb6c1;
+      letter-spacing: 1px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .sub-glow {
+      font-size: 1.3rem;
+      color: #a6576e;
+      text-shadow: 0 0 4px #ffe1e6, 0 0 10px #ffc0cb;
+      font-weight: 400;
+    }
+
+    /* cute rounded button */
+    .cute-btn {
+      background: rgba(255, 220, 240, 0.9);
+      border: 2px solid #ffa5b9;
+      border-radius: 60px;
+      padding: 16px 44px;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: #892e4c;
+      box-shadow: 0 8px 18px rgba(255, 130, 160, 0.2), 0 0 12px rgba(255, 188, 217, 0.5);
+      backdrop-filter: blur(4px);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      letter-spacing: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cute-btn:active {
+      transform: scale(0.96);
+      box-shadow: 0 5px 10px rgba(255, 100, 150, 0.3);
+    }
+
+    /* yes / no buttons container */
+    .button-pair {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+      position: relative;
+      width: 100%;
+    }
+
+    .yes-btn {
+      background: #ffa7b9;
+      color: white;
+      font-size: 1.8rem;
+      padding: 16px 40px;
+      border: none;
+      border-radius: 50px;
+      text-shadow: 0 0 10px white;
+      box-shadow: 0 0 20px #ff8da1;
+      transition: 0.2s;
+    }
+
+    .no-btn {
+      background: #ffe0e7;
+      color: #a64a5c;
+      font-size: 1.8rem;
+      padding: 16px 40px;
+      border: 2px solid #ffb6c1;
+      border-radius: 50px;
+      box-shadow: 0 0 12px #ffc0cb;
+      transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1); /* smooth far slide */
+      will-change: transform;
+      cursor: pointer;
+      touch-action: pan-y;
+    }
+
+    .no-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* secret 3-dots icon – fixed top left */
+    .secret-dots {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 32px;
+      color: #c1546c;
+      text-shadow: 0 0 8px #ffb6c1;
+      background: rgba(255, 235, 240, 0.7);
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 200, 210, 0.8);
+      cursor: pointer;
+      z-index: 100;
+      box-shadow: 0 5px 12px rgba(255, 120, 150, 0.25);
+      transition: 0.2s;
+    }
+
+    .secret-dots:active {
+      background: #ffe3ec;
+    }
+
+    /* secret panel */
+    .secret-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      visibility: hidden;
+      opacity: 0;
+      transition: 0.2s ease;
+      background: rgba(255, 215, 225, 0.45);
+      backdrop-filter: blur(6px);
+    }
+
+    .secret-panel.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .panel-card {
+      background: #fff0f5;
+      padding: 36px 28px;
+      border-radius: 48px 20px 48px 20px;
+      box-shadow: 0 20px 30px #ffb6c1;
+      border: 2px solid white;
+      text-align: center;
+      max-width: 300px;
+      width: 80%;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-card h3 {
+      font-size: 2rem;
+      color: #ba2d5e;
+      margin-bottom: 24px;
+      text-shadow: 0 0 8px #ffb8c9;
+    }
+
+    .panel-card p {
+      font-size: 1.4rem;
+      color: #711c39;
+      margin: 16px 0;
+      font-weight: 500;
+    }
+
+    .close-panel {
+      margin-top: 24px;
+      background: #ffb6c1;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 40px;
+      font-size: 1.2rem;
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 0 16px pink;
+      cursor: pointer;
+    }
+
+    /* footer — fixed bottom */
+    .love-footer {
+      position: fixed;
+      bottom: 16px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 0.95rem;
+      color: rgba(170, 80, 100, 0.7);
+      text-shadow: 0 0 6px #ffe2eb;
+      letter-spacing: 2px;
+      z-index: 99;
+      backdrop-filter: blur(4px);
+      padding: 8px;
+      font-weight: 400;
+    }
+
+    /* scene 3 special yay glow – softer pulse */
+    .yay-glow {
+      animation: softPulse 2.5s infinite;
+    }
+
+    @keyframes softPulse {
+      0% { text-shadow: 0 0 5px #ffb6c1, 0 0 15px #ffa5b9; }
+      50% { text-shadow: 0 0 12px #ff8ea1, 0 0 25px #ff6a8a; }
+      100% { text-shadow: 0 0 5px #ffb6c1, 0 0 15px #ffa5b9; }
+    }
+
+    @media (max-width: 450px) {
+      .glow-text { font-size: 2rem; }
+      .cute-btn { font-size: 1.3rem; padding: 14px 30px; }
+      .no-btn, .yes-btn { font-size: 1.6rem; padding: 14px 30px; }
+      .button-pair { gap: 20px; }
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- background floating hearts (soft & dreamy) -->
+  <div class="hearts-bg" id="floatingHearts"></div>
+
+  <!-- secret 3-dots icon -->
+  <div class="secret-dots" id="secretDots"></div>
+
+  <!-- secret panel modal -->
+  <div class="secret-panel" id="secretPanel">
+    <div class="panel-card">
+      <h3> secret </h3>
+      <p> page visits: <span id="visitCount">0</span></p>
+      <p> yes pressed: <span id="yesCount">0</span></p>
+      <button class="close-panel" id="closePanel">close °</button>
+    </div>
+  </div>
+
+  <!-- main scenes -->
+  <div class="scene-container">
+    <!-- SCENE 1 - INTRO -->
+    <div class="scene active" id="scene1">
+      <div class="content">
+        <div class="glow-text" style="font-size: 2.2rem;">
+          Ishan wants to ask you something… 
+        </div>
+        <div class="sub-glow" style="font-size: 1.3rem; margin-top: -8px;">
+          “Please don’t rush… this is from the heart”
+        </div>
+        <button class="cute-btn" id="continueBtn">
+          Continue 
+        </button>
+      </div>
+    </div>
+
+    <!-- SCENE 2 - VALENTINE QUESTION -->
+    <div class="scene" id="scene2">
+      <div class="content">
+        <div class="glow-text" id="questionText">
+          Will you be my Valentine? 
+        </div>
+        
+        <div class="button-pair">
+          <button class="cute-btn yes-btn" id="yesBtn"> YES</button>
+          <button class="cute-btn no-btn" id="noBtn"> NO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENE 3 - YES PAGE -->
+    <div class="scene" id="scene3">
+      <div class="content">
+        <div class="glow-text yay-glow" style="font-size: 2.6rem;">
+          YAYYY! I knew you also love me 
+        </div>
+        <div class="sub-glow" style="font-size: 1.8rem; margin-top: 10px;">
+          This made my day…
+        </div>
+        <div style="font-size: 3rem; filter: drop-shadow(0 0 8px pink);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- footer -->
+  <div class="love-footer">
+    Made by Ishan with love 
+  </div>
+
+  <!-- confetti canvas (hidden until YAY) -->
+  <canvas id="confetti-canvas" style="display: none;"></canvas>
+
+  <script>
+    (function() {
+      "use strict";
+
+      // ---------- LOCAL STORAGE COUNTERS ----------
+      function getPageVisits() {
+        return parseInt(localStorage.getItem('ishanValentine_visits') || '0');
+      }
+      function setPageVisits(val) {
+        localStorage.setItem('ishanValentine_visits', val);
+      }
+      function getYesPresses() {
+        return parseInt(localStorage.getItem('ishanValentine_yes') || '0');
+      }
+      function setYesPresses(val) {
+        localStorage.setItem('ishanValentine_yes', val);
+      }
+
+      let visits = getPageVisits() + 1;
+      setPageVisits(visits);
+
+      function updateSecretCounters() {
+        document.getElementById('visitCount').innerText = getPageVisits();
+        document.getElementById('yesCount').innerText = getYesPresses();
+      }
+
+      // ---------- SCENE TRANSITIONS ----------
+      const scene1 = document.getElementById('scene1');
+      const scene2 = document.getElementById('scene2');
+      const scene3 = document.getElementById('scene3');
+      const continueBtn = document.getElementById('continueBtn');
+      const yesBtn = document.getElementById('yesBtn');
+      const noBtn = document.getElementById('noBtn');
+      const questionEl = document.getElementById('questionText');
+
+      const ORIGINAL_QUESTION = 'Will you be my Valentine? ';
+
+      function setActiveScene(sceneId) {
+        scene1.classList.remove('active');
+        scene2.classList.remove('active');
+        scene3.classList.remove('active');
+        if (sceneId === 1) scene1.classList.add('active');
+        if (sceneId === 2) {
+          scene2.classList.add('active');
+          if (noBtn) noBtn.style.transform = 'translate(0, 0)';
+          if (questionEl) questionEl.innerText = ORIGINAL_QUESTION;
+        }
+        if (sceneId === 3) {
+          scene3.classList.add('active');
+          //  LIGHTWEIGHT CONFETTI – single burst, low particle count
+          if (typeof confetti === 'function') {
+            confetti({
+              particleCount: 65,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#ff8cae', '#ffb3c6', '#ffd1dc', '#ffe4e9']
+            });
+          }
+        }
+      }
+
+      continueBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        setActiveScene(2);
+      });
+
+      // ---------- YES BUTTON ----------
+      yesBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        let yesCount = getYesPresses() + 1;
+        setYesPresses(yesCount);
+        setActiveScene(3);
+      });
+
+      // ---------- PLAYFUL NO BUTTON – NOW JUMPS FAR! ----------
+      const teaseTexts = [
+        'Are you sure? ',
+        'Please don\'t say nooo ',
+        'Think again ',
+        'I don\'t think so '
+      ];
+
+      function moveNoButtonFar() {
+        if (!noBtn) return;
+        //  LONG DISTANCE SLIDE: between -140px and 140px horizontally & vertically
+        const dx = (Math.random() * 280) - 140;
+        const dy = (Math.random() * 280) - 140;
+        noBtn.style.transform = `translate(${dx}px, ${dy}px)`;
+      }
+
+      function changeQuestionToTease() {
+        if (questionEl) {
+          const randomIdx = Math.floor(Math.random() * teaseTexts.length);
+          questionEl.innerText = teaseTexts[randomIdx];
+        }
+      }
+
+      function noButtonEvasion(e) {
+        e?.preventDefault?.();
+        moveNoButtonFar();
+        changeQuestionToTease();
+      }
+
+      // Evade on hover (desktop) + touch (mobile)
+      noBtn.addEventListener('mouseenter', noButtonEvasion);
+      noBtn.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        noButtonEvasion(e);
+      }, { passive: false });
+
+      // In case they actually tap/click (rare)
+      noBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        moveNoButtonFar();
+        changeQuestionToTease();
+      });
+
+      // Also move on touchmove for extra playful slide
+      noBtn.addEventListener('touchmove', function(e) {
+        e.preventDefault();
+        moveNoButtonFar();
+        changeQuestionToTease();
+      }, { passive: false });
+
+      // ---------- FLOATING HEARTS ----------
+      function createHearts() {
+        const heartsContainer = document.getElementById('floatingHearts');
+        heartsContainer.innerHTML = '';
+        const heartSymbols = ['', '', '', '', '', '', '', ''];
+        for (let i = 0; i < 28; i++) {
+          const heart = document.createElement('span');
+          heart.className = 'heart-float';
+          heart.style.left = Math.random() * 100 + '%';
+          heart.style.fontSize = (Math.random() * 2 + 1.2) + 'rem';
+          heart.style.animationDuration = (Math.random() * 12 + 12) + 's';
+          heart.style.animationDelay = (Math.random() * 12) + 's';
+          heart.style.opacity = Math.random() * 0.3 + 0.15;
+          heart.innerText = heartSymbols[Math.floor(Math.random() * heartSymbols.length)];
+          heartsContainer.appendChild(heart);
+        }
+      }
+      createHearts();
+
+      // ---------- SECRET PANEL ----------
+      const secretDots = document.getElementById('secretDots');
+      const secretPanel = document.getElementById('secretPanel');
+      const closePanel = document.getElementById('closePanel');
+
+      function openSecret() {
+        updateSecretCounters();
+        secretPanel.classList.add('show');
+      }
+
+      secretDots.addEventListener('click', openSecret);
+      closePanel.addEventListener('click', function() {
+        secretPanel.classList.remove('show');
+      });
+      secretPanel.addEventListener('click', function(e) {
+        if (e.target === secretPanel) {
+          secretPanel.classList.remove('show');
+        }
+      });
+
+      window.addEventListener('load', function() {
+        updateSecretCounters();
+      });
+    })();
+  </script>
+
+  <!-- Google Fonts (soft & rounded) -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</body>
+</html>
